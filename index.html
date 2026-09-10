@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>JESSI QUEST — Nivel 1: Encontrar a GAZTi</title>
+<style>
+:root{
+  --ink:#11121a; --pink:#ff4f9a; --hot:#ff79b5; --cream:#ffe8c7;
+  --blue:#53c7ff; --green:#7cf29a; --red:#ff5570; --purple:#8e65ff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#17152a;color:white;font-family:"Courier New",monospace}
+body{display:flex;justify-content:center;align-items:center;padding:18px;overflow-x:hidden}
+#game{
+  width:min(980px,100%); min-height:650px; position:relative; overflow:hidden;
+  border:6px solid #090a10; background:#251e3d;
+  box-shadow:0 0 0 4px #635080, 10px 10px 0 #090a10;
+  image-rendering:pixelated;
+}
+.scanlines{pointer-events:none;position:absolute;inset:0;z-index:50;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.10) 0 2px,transparent 2px 5px)}
+.topbar{height:66px;background:#11121a;border-bottom:5px solid #090a10;display:flex;align-items:center;justify-content:space-between;padding:8px 14px;font-weight:900}
+.logo{font-size:clamp(15px,2.2vw,22px);color:var(--pink);text-shadow:3px 3px 0 #7a1c52}
+.stats{display:flex;gap:14px;font-size:14px;align-items:center}.lives{color:#ff668d}
+.stage{height:42px;background:#3a2e59;display:flex;align-items:center;padding:0 15px;gap:14px;border-bottom:4px solid #171326;font-size:13px}
+.progress{flex:1;height:13px;background:#11121a;border:3px solid #090a10}.bar{height:100%;width:0;background:var(--green);transition:width .2s}
+.arena{position:relative;min-height:540px;padding:22px;display:flex;gap:24px;align-items:center;justify-content:center;
+ background:
+ radial-gradient(circle at 50% 20%,#4d376e 0 18%,transparent 19%),
+ linear-gradient(#2c2450 0 70%,#1c1733 70%);
+}
+.stars{position:absolute;inset:0;background-image:
+ linear-gradient(90deg,transparent 0 49px,#fff 50px 52px,transparent 53px),
+ linear-gradient(transparent 0 59px,#fff 60px 62px,transparent 63px);
+ background-size:120px 120px;opacity:.08}
+.panel{position:relative;z-index:2;width:min(430px,100%);background:#f8e9d2;color:#17131f;border:6px solid #090a10;box-shadow:8px 8px 0 #090a10}
+.panel-head{height:52px;background:#ff4f9a;border-bottom:5px solid #090a10;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;font-weight:900}
+.boo{font-size:22px}.profile{display:grid;grid-template-columns:120px 1fr;gap:14px;padding:15px}
+.photo{width:120px;height:160px;border:5px solid #090a10;background:#cbbca7;overflow:hidden;position:relative}
+.photo img{width:100%;height:100%;object-fit:cover;image-rendering:auto;filter:saturate(.9)}
+.photo:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 5px,rgba(0,0,0,.10) 6px 7px);pointer-events:none}
+.info h2{font-size:21px;margin:4px 0 6px}.info p{font-size:13px;line-height:1.35;margin:5px 0}.tag{display:inline-block;background:#17121f;color:#fff;padding:4px 7px;margin:3px 3px 0 0;font-size:10px}
+.card-state{font-size:11px;margin-top:9px;padding:7px;border:3px solid #17121f;background:#fff6e9}
+.controls{position:relative;z-index:3;width:330px;min-width:290px;text-align:center}
+.instruction{font-size:13px;line-height:1.4;margin-bottom:10px;color:#ffe8c7}
+.sequence{height:74px;display:flex;justify-content:center;align-items:center;gap:9px;margin-bottom:8px}
+.arrow{width:48px;height:48px;border:4px solid #090a10;background:#f8e9d2;color:#17121f;display:flex;align-items:center;justify-content:center;font-size:25px;font-weight:900;box-shadow:4px 4px 0 #090a10;transition:.08s}
+.arrow.current{background:var(--blue);transform:translateY(-3px);box-shadow:4px 7px 0 #090a10}
+.arrow.good{background:var(--green)}.arrow.bad{background:var(--red)}
+.timer{height:15px;background:#11121a;border:3px solid #090a10;margin:8px 0 14px}.timerbar{height:100%;width:100%;background:var(--pink);transition:width linear}
+.pad{display:grid;grid-template-columns:repeat(3,62px);grid-template-rows:repeat(2,54px);gap:8px;justify-content:center}
+.key{border:4px solid #090a10;background:#f8e9d2;color:#17121f;font:900 24px "Courier New";box-shadow:4px 4px 0 #090a10;cursor:pointer;touch-action:manipulation}
+.key:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #090a10}.up{grid-column:2}.left{grid-column:1;grid-row:2}.down{grid-column:2;grid-row:2}.right{grid-column:3;grid-row:2}
+.message{min-height:26px;font-size:13px;font-weight:900;color:#ffe8c7;margin-top:13px}
+.overlay{position:absolute;inset:0;z-index:40;background:rgba(11,9,18,.94);display:flex;align-items:center;justify-content:center;padding:22px}
+.modal{width:min(620px,100%);background:#f8e9d2;color:#17121f;border:7px solid #090a10;box-shadow:10px 10px 0 #090a10;padding:26px;text-align:center}
+.modal h1{margin:0 0 12px;font-size:clamp(22px,4vw,38px);color:#ff4f9a;text-shadow:3px 3px 0 #7a1c52}
+.modal p{font-size:14px;line-height:1.5}.bigbtn{margin-top:13px;padding:13px 22px;border:5px solid #090a10;background:#7cf29a;color:#11121a;font:900 16px "Courier New";cursor:pointer;box-shadow:6px 6px 0 #090a10}
+.bigbtn:active{transform:translate(5px,5px);box-shadow:1px 1px 0 #090a10}
+.badge{display:inline-block;padding:6px 9px;background:#17121f;color:#ffe8c7;font-size:11px;margin:4px}
+.hidden{display:none!important}
+@media(max-width:760px){
+ body{padding:0}.game{width:100%}#game{min-height:100vh;border-width:4px;box-shadow:none}
+ .arena{padding:14px;flex-direction:column;gap:12px;min-height:calc(100vh - 108px)}
+ .panel{width:min(430px,100%)}.controls{width:100%}.profile{grid-template-columns:90px 1fr}.photo{width:90px;height:120px}
+ .topbar{height:58px}.stage{height:46px}.sequence{height:64px}
+}
+</style>
+</head>
+<body>
+<div id="game">
+  <div class="scanlines"></div>
+  <div class="topbar">
+    <div class="logo">♥ JESSI QUEST</div>
+    <div class="stats"><span>NIVEL 1</span><span class="lives" id="lives">♥♥♥</span><span id="score">0000</span></div>
+  </div>
+  <div class="stage">
+    <b id="phaseLabel">FASE 1/5</b><div class="progress"><div class="bar" id="bar"></div></div><b id="speedLabel">LENTO</b>
+  </div>
+  <div class="arena">
+    <div class="stars"></div>
+    <section class="panel">
+      <div class="panel-head"><span id="appTitle">BOO</span><span class="boo">♡</span></div>
+      <div class="profile">
+        <div class="photo"><img id="profileImg" src="assets/jesi_pixel.jpg" alt="Perfil pixelado"></div>
+        <div class="info">
+          <h2 id="profileName">Buscando...</h2>
+          <p id="profileAge">Perfil recomendado</p>
+          <div id="tags"></div>
+          <div class="card-state" id="cardState">PULSÁ LA FLECHA QUE APARECE PARA SKIPEAR</div>
+        </div>
+      </div>
+    </section>
+    <section class="controls">
+      <div class="instruction">JESSI ESTÁ BUSCANDO A <b>GAZTi</b>.<br>SKIPEÁ LOS PERFILES SIN EQUIVOCARTE.</div>
+      <div class="sequence" id="sequence"></div>
+      <div class="timer"><div class="timerbar" id="timerbar"></div></div>
+      <div class="pad">
+        <button class="key up" data-key="ArrowUp">▲</button>
+        <button class="key left" data-key="ArrowLeft">◀</button>
+        <button class="key down" data-key="ArrowDown">▼</button>
+        <button class="key right" data-key="ArrowRight">▶</button>
+      </div>
+      <div class="message" id="message">Preparada...</div>
+    </section>
+  </div>
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="badge">BOO // 8-BIT EDITION</div>
+      <h1>ENCONTRÁ A GAZTi</h1>
+      <p>Jessi abrió Boo y empezó a saltear perfiles para encontrar al pibe indicado.</p>
+      <p><b>Tu misión:</b> seguí las flechas a tiempo. Hay <b>5 fases</b> y cada una es más rápida. Llegá hasta el perfil secreto de GAZTi.</p>
+      <p>⌨️ Teclado: ↑ ↓ ← → &nbsp; | &nbsp; 📱 También podés tocar los botones.</p>
+      <button class="bigbtn" id="start">▶ EMPEZAR NIVEL 1</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const profiles = [
+  ["Tomi", "24", ["mate", "gaming", "gimnasio"]],
+  ["Sofi", "23", ["series", "mates", "rock"]],
+  ["Lautaro", "26", ["fútbol", "memes", "cerveza"]],
+  ["Mica", "25", ["anime", "dibujar", "gatos"]],
+  ["Nico", "27", ["PC", "CS2", "pizza"]],
+  ["Vale", "24", ["música", "pelis", "viajes"]],
+  ["Fran", "26", ["memes", "terror", "Minecraft"]]
+];
+const arrows = ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
+const symbols = {ArrowUp:"▲",ArrowDown:"▼",ArrowLeft:"◀",ArrowRight:"▶"};
+const phaseNames = ["LENTO","TRANQUI","RÁPIDO","MUY RÁPIDO","MODO NOVIA"];
+const speeds = [1150,900,720,570,430];
+
+let phase=1, lives=3, score=0, current=null, timer=null, deadline=null, playing=false, profileIndex=0;
+const $ = id => document.getElementById(id);
+
+function updateUI(){
+  $("lives").textContent = "♥".repeat(lives) + "♡".repeat(3-lives);
+  $("score").textContent = String(score).padStart(4,"0");
+  $("phaseLabel").textContent = `FASE ${phase}/5`;
+  $("speedLabel").textContent = phaseNames[phase-1];
+  $("bar").style.width = `${((phase-1)/5)*100}%`;
+}
+function randomProfile(){
+  const p=profiles[profileIndex++ % profiles.length];
+  $("profileImg").src="assets/jesi_pixel.jpg";
+  $("profileName").textContent=p[0];
+  $("profileAge").textContent=p[1]+" años · 3 km de distancia";
+  $("tags").innerHTML=p[2].map(x=>`<span class="tag">${x}</span>`).join("");
+  $("cardState").textContent="PERFIL NO ES GAZTi — SKIPEAR";
+}
+function makeSequence(){
+  // Short sequences keep it easy and quick; phase increases timing difficulty.
+  return Array.from({length:1},()=>arrows[Math.floor(Math.random()*4)]);
+}
+function nextPrompt(){
+  if(!playing) return;
+  randomProfile();
+  current=makeSequence()[0];
+  $("sequence").innerHTML=`<div class="arrow current">${symbols[current]}</div>`;
+  $("message").textContent="¡AHORA!";
+  const ms=speeds[phase-1];
+  $("timerbar").style.transition="none";
+  $("timerbar").style.width="100%";
+  requestAnimationFrame(()=>{ $("timerbar").style.transition=`width ${ms}ms linear`; $("timerbar").style.width="0%"; });
+  clearTimeout(timer);
+  deadline=performance.now()+ms;
+  timer=setTimeout(()=>resolve(null),ms);
+}
+function resolve(key){
+  if(!playing) return;
+  clearTimeout(timer);
+  const ok=key===current && performance.now()<=deadline+70;
+  const box=document.querySelector(".arrow");
+  if(ok){
+    score += 100*phase;
+    box.classList.remove("current"); box.classList.add("good");
+    $("cardState").textContent="✓ SKIPEADO — SIGUIENTE PERFIL";
+    $("message").textContent="¡BIEN! +"+(100*phase);
+    updateUI();
+    setTimeout(()=>{
+      if(Math.random()<0.34 && phase<5){ phase++; updateUI(); }
+      // 12 successful skips are enough to move through the five phases.
+      successes++;
+      if(successes>=12) finish(); else nextPrompt();
+    },180);
+  }else{
+    lives--;
+    box.classList.remove("current"); box.classList.add("bad");
+    $("cardState").textContent="✕ TE DISTRAJISTE";
+    $("message").textContent=key===null?"¡TARDE!":"¡ESA NO!";
+    updateUI();
+    if(lives<=0){setTimeout(gameOver,350);}
+    else setTimeout(nextPrompt,350);
+  }
+}
+let successes=0;
+function startGame(){
+  phase=1;lives=3;score=0;successes=0;profileIndex=0;playing=true;
+  $("overlay").classList.add("hidden"); updateUI(); nextPrompt();
+}
+function gameOver(){
+  playing=false;
+  $("overlay").classList.remove("hidden");
+  $("overlay").querySelector(".modal").innerHTML=`
+    <div class="badge">GAME OVER // BOO</div>
+    <h1>¡SE LE ESCAPÓ!</h1>
+    <p>Jessi se quedó sin paciencia y cerró Boo.</p>
+    <p><b>Puntaje: ${String(score).padStart(4,"0")}</b></p>
+    <button class="bigbtn" onclick="startGame()">↻ REINTENTAR</button>`;
+}
+function finish(){
+  playing=false; clearTimeout(timer);
+  $("bar").style.width="100%";
+  $("profileImg").src="assets/gaston_pixel.jpg";
+  $("profileName").textContent="GAZTi ♥";
+  $("profileAge").textContent="28 años · PERFIL ENCONTRADO";
+  $("tags").innerHTML=["gaming","memes","Jessi","♥"].map(x=>`<span class="tag">${x}</span>`).join("");
+  $("cardState").textContent="★ ¡OBJETIVO ENCONTRADO!";
+  $("message").textContent="¡LO ENCONTRÓ!";
+  $("overlay").classList.remove("hidden");
+  $("overlay").querySelector(".modal").innerHTML=`
+    <div class="badge">CROMO DESBLOQUEADO</div>
+    <h1>♥ ¡ENCONTRASTE A GAZTi! ♥</h1>
+    <p>Después de saltear una banda de perfiles, Jessi finalmente encontró el perfil que estaba buscando.</p>
+    <p style="font-size:20px">🏆 <b>CROMO #01 — EL MATCH</b></p>
+    <p>Puntaje: <b>${String(score).padStart(4,"0")}</b></p>
+    <button class="bigbtn" onclick="startGame()">↻ JUGAR DE NUEVO</button>`;
+}
+document.addEventListener("keydown",e=>{
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)){e.preventDefault();resolve(e.key);}
+});
+document.querySelectorAll(".key").forEach(b=>b.addEventListener("click",()=>resolve(b.dataset.key)));
+$("start").addEventListener("click",startGame);
+updateUI();
+</script>
+</body>
+</html>

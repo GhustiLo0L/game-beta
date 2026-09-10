@@ -69,11 +69,17 @@ linear-gradient(135deg,transparent 0 48%,#2a1f3d 49% 51%,transparent 52%) 0 0/45
  body{padding:0}#game{min-height:100vh;box-shadow:none;border-width:4px}.scene{flex-direction:column;gap:8px;padding:12px;overflow:auto}
  .jessi{display:none}.phone{width:300px;height:450px}.pic{height:190px}.gameplay{align-self:center}.top{height:58px}.stage{height:42px}
 }
+.audioBox{position:fixed;right:18px;bottom:18px;z-index:80;background:#121019;color:#fff;border:4px solid #050509;box-shadow:5px 5px #050509;padding:8px 10px;font-size:11px;display:flex;align-items:center;gap:8px}
+.audioBox button,.audioBox input{font:900 11px "Courier New"}.audioBox button{border:3px solid #050509;background:#fff0d6;padding:5px 7px;cursor:pointer}.audioBox input{width:90px;accent-color:#ff5aa7}
+.fullBtn{position:absolute;top:9px;right:12px;border:3px solid #050509;background:#fff0d6;color:#111;padding:6px 8px;font:900 11px "Courier New";cursor:pointer}
+.countdown{position:absolute;inset:0;z-index:60;background:rgba(5,4,9,.96);display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff0d6}
+.countdown .num{font-size:clamp(90px,18vw,170px);color:#ff5aa7;text-shadow:8px 8px #5f163e;font-weight:900;line-height:1}
+.countdown .small{font-size:14px;margin-top:18px}
 </style>
 </head>
 <body>
 <div id="game">
-<div class="scan"></div>
+<div class="scan"></div><button class="fullBtn" id="fullBtn">⛶ PANTALLA COMPLETA</button>
 <header class="top"><div class="logo">♥ JESSI QUEST</div><div class="stats"><span>NIVEL 1</span><span class="lives" id="lives">♥♥♥</span><span id="score">0000</span></div></header>
 <div class="stage"><b id="phase">FASE 1/5</b><div class="progress"><i id="bar"></i></div><b id="speed">LENTO</b></div>
 <main class="scene">
@@ -112,6 +118,11 @@ linear-gradient(135deg,transparent 0 48%,#2a1f3d 49% 51%,transparent 52%) 0 0/45
 </main>
 
 <div class="confetti-layer hidden" id="confettiLayer"></div>
+<div class="audioBox">
+  <button id="muteBtn">🔊</button>
+  <input id="volume" type="range" min="0" max="100" value="28" aria-label="Volumen">
+</div>
+<div class="countdown hidden" id="countdown"><div class="num" id="countNum">5</div><div class="small">PREPARATE... EL NIVEL COMIENZA</div></div>
 <div class="overlay" id="overlay"><div class="modal" id="modal">
   <h1>ENCONTRÁ A GAZTi ♥</h1>
   <p>Jessi agarró el celular y abrió Boo. Ahora tiene que <b>saltear un montón de perfiles</b> hasta encontrar el tuyo.</p>
@@ -121,6 +132,10 @@ linear-gradient(135deg,transparent 0 48%,#2a1f3d 49% 51%,transparent 52%) 0 0/45
 </div></div>
 </div>
 
+<audio id="music" src="audio/nivel1_musica.mp3" loop preload="auto"></audio>
+<audio id="sfxDeath" src="audio/muerte.mp3" preload="auto"></audio>
+<audio id="sfxVictory" src="audio/victoria.mp3" preload="auto"></audio>
+<audio id="sfxCard" src="audio/cromo.mp3" preload="auto"></audio>
 <script>
 const profiles=[
  ["Kana","22",["anime","cosplay","memes"],"assets/kana.jpeg"],
@@ -225,10 +240,34 @@ function retrySameProfile(){
  timer=setTimeout(()=>answer(null),ms);
 }
 
-function start(){phase=1;lives=3;score=0;idx=0;successes=0;playing=true;document.getElementById("overlay").classList.add("hidden");ui();next();}
-function gameOver(){playing=false;document.getElementById("overlay").classList.remove("hidden");document.getElementById("modal").innerHTML=`<h1>¡SE LE ESCAPÓ!</h1><p>Jessi se distrajo y perdió el perfil.</p><p>Puntaje: <b>${String(score).padStart(4,"0")}</b></p><button class="btn" onclick="start()">↻ REINTENTAR</button>`;}
+function start(){
+ phase=1;lives=3;score=0;idx=0;successes=0;playing=false;
+ document.getElementById("overlay").classList.add("hidden");
+ ui();
+ beginCountdown();
+}
+function beginCountdown(){
+ const cd=document.getElementById("countdown"), num=document.getElementById("countNum");
+ cd.classList.remove("hidden");
+ let n=5; num.textContent=n;
+ try{ music.currentTime=0; music.play(); }catch(e){}
+ const tick=setInterval(()=>{
+   n--;
+   if(n>0){num.textContent=n;}
+   else{
+     clearInterval(tick);
+     num.textContent="¡YA!";
+     setTimeout(()=>{
+       cd.classList.add("hidden");
+       playing=true;
+       next();
+     },450);
+   }
+ },1000);
+}
+function gameOver(){playing=false; playSfx(sfxDeath);document.getElementById("overlay").classList.remove("hidden");document.getElementById("modal").innerHTML=`<h1>¡SE LE ESCAPÓ!</h1><p>Jessi se distrajo y perdió el perfil.</p><p>Puntaje: <b>${String(score).padStart(4,"0")}</b></p><button class="btn" onclick="start()">↻ REINTENTAR</button>`;}
 function finish(){
- playing=false;
+ playing=false; clearTimeout(timer); playSfx(sfxVictory);
  clearTimeout(timer);
 
  // First show GAZTi as the final Boo profile.
@@ -257,6 +296,7 @@ function finish(){
  }
 
  setTimeout(()=>{
+   playSfx(sfxCard);
    layer.classList.add("hidden");
    overlay.classList.remove("hidden");
    document.getElementById("modal").innerHTML=
@@ -267,7 +307,43 @@ function finish(){
      <button class="btn" onclick="start()">↻ JUGAR DE NUEVO</button>`;
  },1100);
 }
-document.addEventListener("keydown",e=>{if(arrows.includes(e.key)){e.preventDefault();answer(e.key)}});document.querySelectorAll(".key").forEach(b=>b.onclick=()=>answer(b.dataset.key));document.getElementById("start").onclick=start;ui();
+document.addEventListener("keydown",e=>{if(arrows.includes(e.key)){e.preventDefault();answer(e.key)}});document.querySelectorAll(".key").forEach(b=>b.onclick=()=>answer(b.dataset.key));
+const music=document.getElementById("music");
+const sfxDeath=document.getElementById("sfxDeath");
+const sfxVictory=document.getElementById("sfxVictory");
+const sfxCard=document.getElementById("sfxCard");
+const volume=document.getElementById("volume");
+const muteBtn=document.getElementById("muteBtn");
+let muted=false;
+function setVolume(){
+ const v=(Number(volume.value)||0)/100;
+ music.volume=v*0.42;
+ sfxDeath.volume=v*0.75;
+ sfxVictory.volume=v*0.75;
+ sfxCard.volume=v*0.75;
+}
+function playSfx(el){
+ if(muted)return;
+ el.currentTime=0;
+ el.play().catch(()=>{});
+}
+volume.addEventListener("input",setVolume);
+muteBtn.addEventListener("click",()=>{
+ muted=!muted;
+ muteBtn.textContent=muted?"🔇":"🔊";
+ music.muted=muted;
+ sfxDeath.muted=muted;sfxVictory.muted=muted;sfxCard.muted=muted;
+});
+setVolume();
+
+document.getElementById("fullBtn").addEventListener("click",async()=>{
+ try{
+   if(!document.fullscreenElement) await document.documentElement.requestFullscreen();
+   else await document.exitFullscreen();
+ }catch(e){}
+});
+
+document.getElementById("start").onclick=start;ui();
 </script>
 </body>
 </html>

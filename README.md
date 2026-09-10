@@ -11,8 +11,9 @@ Jessi está haciendo swipe entre perfiles hasta encontrar a GAZTi.
 - 5 fases de velocidad.
 - 3 vidas y puntaje.
 - Al comenzar hay una cuenta regresiva **5 → 4 → 3 → 2 → 1 → ¡YA!**
-- Al completar el nivel aparece primero el perfil de GAZTi, suena la victoria y cae confeti durante un instante.
-- Después aparece la tarjeta del Cromo #01 y se reproduce su efecto.
+- Al completar el nivel aparece primero el perfil de GAZTi **bien visible** en el teléfono, suena la victoria y cae confeti durante unos segundos.
+- Después el teléfono muestra una animación de batería agotándose (100% → 75% → 50% → 25% → 1% → 0%) y finalmente se apaga.
+- Recién después aparece la tarjeta del Cromo #01 y se reproduce su efecto, dejando tiempo para leerla.
 
 ### Audio
 - Música del Nivel 1 en bucle: `audio/nivel1_musica.mp3`
@@ -27,7 +28,7 @@ Jessi está haciendo swipe entre perfiles hasta encontrar a GAZTi.
 Hay un botón `⛶ PANTALLA COMPLETA` dentro del juego.
 
 ### Imágenes
-Los perfiles usan las imágenes originales proporcionadas. Jessi y GAZTi también usan sus fotos originales. El estilo retro está en la interfaz, HUD, marcos, tipografía y efectos.
+Los perfiles usan las imágenes originales proporcionadas. Jessi y GAZTi también usan sus fotos originales. La imagen final de GAZTi está guardada como PNG real para evitar problemas de carga del navegador. El estilo retro está en la interfaz, HUD, marcos, tipografía y efectos.
 
 ### Publicación
 Subir `index.html`, `assets/` y `audio/` a GitHub y conectar el repositorio con Netlify. No requiere build ni dependencias.

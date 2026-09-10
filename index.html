@@ -56,6 +56,14 @@ linear-gradient(135deg,transparent 0 48%,#2a1f3d 49% 51%,transparent 52%) 0 0/45
 .modal{width:min(620px,100%);background:#fff0d6;color:#18121e;border:7px solid #050509;box-shadow:10px 10px #050509;padding:25px;text-align:center}
 .modal h1{margin:0 0 10px;color:#ff4f9a;text-shadow:3px 3px #711c4b;font-size:clamp(24px,5vw,40px)}
 .modal p{font-size:13px;line-height:1.5}.btn{border:5px solid #050509;background:#7cf29a;color:#111;font:900 16px "Courier New";padding:12px 18px;box-shadow:6px 6px #050509;cursor:pointer}.btn:active{transform:translate(5px,5px);box-shadow:1px 1px #050509}
+
+.confetti-layer{position:absolute;inset:0;z-index:35;pointer-events:none;overflow:hidden}
+.confetti{position:absolute;width:9px;height:14px;background:#ff5aa7;top:-25px;animation:fall 950ms linear forwards}
+.confetti:nth-child(3n){background:#7cf29a}.confetti:nth-child(3n+1){background:#53c7ff}.confetti:nth-child(4n){background:#ffe26b}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0deg);opacity:1}100%{transform:translateY(720px) rotate(720deg);opacity:0}}
+.swipe-out{animation:swipeOut 170ms ease-in forwards}
+@keyframes swipeOut{to{transform:translateX(110px) rotate(7deg);opacity:0}}
+
 .hidden{display:none!important}
 @media(max-width:850px){
  body{padding:0}#game{min-height:100vh;box-shadow:none;border-width:4px}.scene{flex-direction:column;gap:8px;padding:12px;overflow:auto}
@@ -103,6 +111,7 @@ linear-gradient(135deg,transparent 0 48%,#2a1f3d 49% 51%,transparent 52%) 0 0/45
   </div>
 </main>
 
+<div class="confetti-layer hidden" id="confettiLayer"></div>
 <div class="overlay" id="overlay"><div class="modal" id="modal">
   <h1>ENCONTRÁ A GAZTi ♥</h1>
   <p>Jessi agarró el celular y abrió Boo. Ahora tiene que <b>saltear un montón de perfiles</b> hasta encontrar el tuyo.</p>
@@ -154,23 +163,34 @@ function answer(k){
  const a = document.querySelector(".arrow");
 
  if(ok){
+   // IMPORTANT: the profile advances ONLY after the player presses
+   // the currently requested/correct arrow.
    score += 100*phase;
    a.classList.remove("current");
    a.classList.add("good");
    document.getElementById("state").textContent="✓ SWIPE PERFECTO";
-   document.getElementById("msg").textContent="¡SKIPEADO! +" + (100*phase);
+   document.getElementById("msg").textContent="¡SWIPE! +" + (100*phase);
    successes++;
+
+   // Animate the successful swipe before loading the next profile.
+   const card=document.querySelector(".card");
+   card.classList.remove("swipe-out");
+   void card.offsetWidth;
+   card.classList.add("swipe-out");
+
    if(successes%3===0 && phase<5) phase++;
    ui();
 
    if(successes>=20){
-     setTimeout(finish,220);
+     setTimeout(finish,420);
    }else{
-     setTimeout(next,180);
+     setTimeout(()=>{
+       card.classList.remove("swipe-out");
+       next();
+     },220);
    }
  }else{
-   // Wrong key OR timeout: do NOT change profile.
-   // The player must keep trying the same arrow.
+   // Wrong key OR timeout: NEVER advance the profile.
    lives--;
    a.classList.remove("current");
    a.classList.add("bad");
@@ -183,17 +203,16 @@ function answer(k){
    if(lives<=0){
      setTimeout(gameOver,300);
    }else{
-     // Re-arm the SAME prompt without changing the profile.
+     // Re-arm exactly the same arrow and exactly the same profile.
      setTimeout(retrySameProfile,260);
    }
- }
+}
 }
 function retrySameProfile(){
  if(!playing)return;
  const a=document.querySelector(".arrow");
  if(a) a.className="arrow current";
 
- current = current; // intentionally keep the exact same required arrow
  const ms=speeds[phase-1], bar=document.getElementById("timer");
  bar.style.transition="none";
  bar.style.width="100%";
@@ -208,7 +227,46 @@ function retrySameProfile(){
 
 function start(){phase=1;lives=3;score=0;idx=0;successes=0;playing=true;document.getElementById("overlay").classList.add("hidden");ui();next();}
 function gameOver(){playing=false;document.getElementById("overlay").classList.remove("hidden");document.getElementById("modal").innerHTML=`<h1>¡SE LE ESCAPÓ!</h1><p>Jessi se distrajo y perdió el perfil.</p><p>Puntaje: <b>${String(score).padStart(4,"0")}</b></p><button class="btn" onclick="start()">↻ REINTENTAR</button>`;}
-function finish(){playing=false;document.getElementById("profileImg").src="assets/jesi.jpg";document.getElementById("name").textContent="GAZTi ♥";document.getElementById("age").textContent="PERFIL ENCONTRADO";document.getElementById("tags").innerHTML="<span class='tag'>gaming</span><span class='tag'>memes</span><span class='tag'>Jessi</span>";document.getElementById("state").textContent="★ ¡MATCH ENCONTRADO!";document.getElementById("overlay").classList.remove("hidden");document.getElementById("modal").innerHTML=`<h1>♥ ¡LO ENCONTRÓ! ♥</h1><p>Después de saltear todos esos perfiles, Jessi finalmente llegó al indicado.</p><p>🏆 <b>CROMO #01 — EL MATCH</b></p><p>Puntaje: <b>${String(score).padStart(4,"0")}</b></p><button class="btn" onclick="start()">↻ JUGAR DE NUEVO</button>`;}
+function finish(){
+ playing=false;
+ clearTimeout(timer);
+
+ // First show GAZTi as the final Boo profile.
+ const overlay=document.getElementById("overlay");
+ overlay.classList.add("hidden");
+
+ document.getElementById("profileImg").src="assets/gaston.jpg";
+ document.getElementById("name").textContent="GAZTi ♥";
+ document.getElementById("age").textContent="PERFIL ENCONTRADO";
+ document.getElementById("tags").innerHTML="<span class='tag'>gaming</span><span class='tag'>memes</span><span class='tag'>Jessi</span>";
+ document.getElementById("state").textContent="★ ¡MATCH ENCONTRADO!";
+ document.getElementById("msg").textContent="♥ ¡LO ENCONTRÓ! ♥";
+ document.getElementById("bar").style.width="100%";
+
+ // Give the player a full second to see the discovered profile.
+ const layer=document.getElementById("confettiLayer");
+ layer.innerHTML="";
+ layer.classList.remove("hidden");
+ for(let i=0;i<65;i++){
+   const c=document.createElement("span");
+   c.className="confetti";
+   c.style.left=(Math.random()*100)+"%";
+   c.style.animationDelay=(Math.random()*180)+"ms";
+   c.style.transform=`rotate(${Math.random()*360}deg)`;
+   layer.appendChild(c);
+ }
+
+ setTimeout(()=>{
+   layer.classList.add("hidden");
+   overlay.classList.remove("hidden");
+   document.getElementById("modal").innerHTML=
+    `<h1>♥ ¡LO ENCONTRÓ! ♥</h1>
+     <p>Después de saltear todos esos perfiles, Jessi finalmente llegó al indicado.</p>
+     <p>🏆 <b>CROMO #01 — EL MATCH</b></p>
+     <p>Puntaje: <b>${String(score).padStart(4,"0")}</b></p>
+     <button class="btn" onclick="start()">↻ JUGAR DE NUEVO</button>`;
+ },1100);
+}
 document.addEventListener("keydown",e=>{if(arrows.includes(e.key)){e.preventDefault();answer(e.key)}});document.querySelectorAll(".key").forEach(b=>b.onclick=()=>answer(b.dataset.key));document.getElementById("start").onclick=start;ui();
 </script>
 </body>

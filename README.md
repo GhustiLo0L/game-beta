@@ -1,13 +1,9 @@
 # ♥ Jessi Quest — Nivel 1
 
-Nivel 1 del mini juego retro de aniversario.
+Boo — Jessi hace swipe entre perfiles hasta encontrar a GAZTi.
 
-## Idea
-Jessi está usando Boo y haciendo swipe entre perfiles hasta encontrar el perfil de GAZTi. La pantalla muestra físicamente el celular y a Jessi a un lado, para que la acción se entienda de inmediato.
+Las imágenes de los perfiles se mantienen originales. `fake_profile_1.jpg` y `fake_profile_2.jpg` son los nuevos perfiles enviados; `jesi.jpg` y `gaston.jpg` son las nuevas fotos de Jessi y GAZTi. La estética retro está en la interfaz, HUD, marcos, botones y efectos.
 
-## Controles
-- PC: flechas del teclado.
-- Celular: botones en pantalla.
+Controles: flechas del teclado o botones táctiles.
 
-## Publicación
-Proyecto estático: subir `index.html` y `assets/` a GitHub y conectar el repositorio con Netlify. No hay dependencias ni build.
+Publicación: subir `index.html` y `assets/` a GitHub y conectar el repositorio con Netlify. No requiere build.

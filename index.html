@@ -90,7 +90,7 @@ linear-gradient(135deg,transparent 0 48%,#2a1f3d 49% 51%,transparent 52%) 0 0/45
   </div>
 
   <div class="gameplay">
-    <div class="help">JESSI ESTÁ HACIENDO <b>SWIPE</b> POR LOS PERFILES.<br>SKIPEÁ LOS 12 PERFILES HASTA ENCONTRAR A GAZTi.</div>
+    <div class="help">JESSI ESTÁ HACIENDO <b>SWIPE</b> POR LOS PERFILES.<br>ACERTÁ LA FLECHA PARA PASAR AL SIGUIENTE.</div>
     <div class="sequence" id="sequence"></div>
     <div class="timer"><i id="timer"></i></div>
     <div class="pad">
@@ -116,16 +116,18 @@ linear-gradient(135deg,transparent 0 48%,#2a1f3d 49% 51%,transparent 52%) 0 0/45
 const profiles=[
  ["Kana","22",["anime","cosplay","memes"],"assets/kana.jpeg"],
  ["Dana","24",["música","series","mates"],"assets/dana.jpg"],
- ["Perfil Misterioso #03","23",["gaming","memes","pelis"],"assets/perfil_03.jpg"],
- ["Perfil Misterioso #04","27",["viajes","música","café"],"assets/perfil_04.jpg"],
- ["Perfil Misterioso #05","25",["fotos","gym","series"],"assets/perfil_05.jpg"],
- ["Perfil Misterioso #06","26",["fútbol","gaming","memes"],"assets/perfil_06.jpg"],
- ["Perfil Misterioso #07","24",["anime","juegos","terror"],"assets/perfil_07.jpg"],
- ["Perfil Misterioso #08","28",["música","pelis","PC"],"assets/perfil_08.jpg"],
- ["Perfil Misterioso #09","25",["memes","comida","viajes"],"assets/perfil_09.jpg"],
- ["Perfil Misterioso #10","29",["series","mate","gaming"],"assets/perfil_10.jpg"],
- ["Perfil Misterioso #11","26",["auriculares","música","juegos"],"assets/perfil_11.png"],
- ["Perfil Misterioso #12","30",["pelis","memes","café"],"assets/perfil_12.jpg"]
+ ["El Barbhas","37",["aventuras","bosque","magia"],"assets/fake_profile_1.jpg"],
+ ["Negrito del FIFA","21",["fútbol","gaming","memes"],"assets/fake_profile_2.jpg"],
+ ["El Tano","26",["asado","mate","rock"],"assets/perfil_03.jpg"],
+ ["Michael Nilos","25",["gym","música","salidas"],"assets/perfil_04.jpg"],
+ ["El Shrek de Flores","27",["PC","CS2","pizza"],"assets/perfil_05.jpg"],
+ ["Cristian Ronaldo de Once","29",["memes","series","café"],"assets/perfil_06.jpg"],
+ ["El Chad de Berazategui","24",["anime","juegos","terror"],"assets/perfil_07.jpg"],
+ ["El Brian del Mostaza","28",["pelis","gaming","viajes"],"assets/perfil_08.jpg"],
+ ["Pablo Escobar de Quilmes","25",["comida","música","memes"],"assets/perfil_09.jpg"],
+ ["El Facha de Ezeiza","30",["mate","fútbol","series"],"assets/perfil_10.jpg"],
+ ["Kevin Costner Jr.","26",["auriculares","música","juegos"],"assets/perfil_11.png"],
+ ["Messi de La Salada","31",["pelis","memes","café"],"assets/perfil_12.jpg"]
 ];
 const arrows=["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"], sym={ArrowUp:"▲",ArrowDown:"▼",ArrowLeft:"◀",ArrowRight:"▶"};
 const speeds=[1150,900,720,570,430], labels=["LENTO","TRANQUI","RÁPIDO","MUY RÁPIDO","MODO NOVIA"];
@@ -145,17 +147,65 @@ function next(){
  deadline=performance.now()+ms;clearTimeout(timer);timer=setTimeout(()=>answer(null),ms);
 }
 function answer(k){
- if(!playing)return;clearTimeout(timer);
- const ok=k===current && performance.now()<=deadline+70, a=document.querySelector(".arrow");
+ if(!playing)return;
+ clearTimeout(timer);
+
+ const ok = k===current && performance.now()<=deadline+70;
+ const a = document.querySelector(".arrow");
+
  if(ok){
-   score+=100*phase; a.classList.remove("current");a.classList.add("good");document.getElementById("state").textContent="✓ SWIPE PERFECTO";document.getElementById("msg").textContent="¡SKIPEADO! +"+100*phase;
-   successes++; if(successes%3===0 && phase<5)phase++; ui();
-   if(successes>=20)setTimeout(finish,220);else setTimeout(next,180);
+   score += 100*phase;
+   a.classList.remove("current");
+   a.classList.add("good");
+   document.getElementById("state").textContent="✓ SWIPE PERFECTO";
+   document.getElementById("msg").textContent="¡SKIPEADO! +" + (100*phase);
+   successes++;
+   if(successes%3===0 && phase<5) phase++;
+   ui();
+
+   if(successes>=20){
+     setTimeout(finish,220);
+   }else{
+     setTimeout(next,180);
+   }
  }else{
-   lives--;a.classList.remove("current");a.classList.add("bad");document.getElementById("state").textContent="✕ ¡SE LE ESCAPÓ!";document.getElementById("msg").textContent=k===null?"¡TARDE!":"¡ESA NO!";
-   ui(); if(lives<=0)setTimeout(gameOver,300);else setTimeout(next,330);
+   // Wrong key OR timeout: do NOT change profile.
+   // The player must keep trying the same arrow.
+   lives--;
+   a.classList.remove("current");
+   a.classList.add("bad");
+   document.getElementById("state").textContent =
+      k===null ? "⌛ ¡TARDE! — MISMO PERFIL" : "✕ ¡ESA NO! — MISMO PERFIL";
+   document.getElementById("msg").textContent =
+      k===null ? "SE MANTIENE EL PERFIL" : "PROBÁ DE NUEVO";
+   ui();
+
+   if(lives<=0){
+     setTimeout(gameOver,300);
+   }else{
+     // Re-arm the SAME prompt without changing the profile.
+     setTimeout(retrySameProfile,260);
+   }
  }
 }
+function retrySameProfile(){
+ if(!playing)return;
+ const a=document.querySelector(".arrow");
+ if(a) a.className="arrow current";
+
+ current = current; // intentionally keep the exact same required arrow
+ const ms=speeds[phase-1], bar=document.getElementById("timer");
+ bar.style.transition="none";
+ bar.style.width="100%";
+ requestAnimationFrame(()=>{
+   bar.style.transition=`width ${ms}ms linear`;
+   bar.style.width="0%";
+ });
+ deadline=performance.now()+ms;
+ clearTimeout(timer);
+ timer=setTimeout(()=>answer(null),ms);
+}
+
 function start(){phase=1;lives=3;score=0;idx=0;successes=0;playing=true;document.getElementById("overlay").classList.add("hidden");ui();next();}
 function gameOver(){playing=false;document.getElementById("overlay").classList.remove("hidden");document.getElementById("modal").innerHTML=`<h1>¡SE LE ESCAPÓ!</h1><p>Jessi se distrajo y perdió el perfil.</p><p>Puntaje: <b>${String(score).padStart(4,"0")}</b></p><button class="btn" onclick="start()">↻ REINTENTAR</button>`;}
 function finish(){playing=false;document.getElementById("profileImg").src="assets/jesi.jpg";document.getElementById("name").textContent="GAZTi ♥";document.getElementById("age").textContent="PERFIL ENCONTRADO";document.getElementById("tags").innerHTML="<span class='tag'>gaming</span><span class='tag'>memes</span><span class='tag'>Jessi</span>";document.getElementById("state").textContent="★ ¡MATCH ENCONTRADO!";document.getElementById("overlay").classList.remove("hidden");document.getElementById("modal").innerHTML=`<h1>♥ ¡LO ENCONTRÓ! ♥</h1><p>Después de saltear todos esos perfiles, Jessi finalmente llegó al indicado.</p><p>🏆 <b>CROMO #01 — EL MATCH</b></p><p>Puntaje: <b>${String(score).padStart(4,"0")}</b></p><button class="btn" onclick="start()">↻ JUGAR DE NUEVO</button>`;}
